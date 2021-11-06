@@ -1,0 +1,42 @@
+###############################################################################
+################################ Setup Sim ####################################
+###############################################################################
+
+units           real
+atom_style      charge
+timestep        ${timestep}
+
+boundary        p p s
+region          box block 0 ${edge_x} 0 ${edge_y} 0 ${edge_z}
+region          legal_space block 0 ${edge_x} 0 ${edge_y} ${bz} ${tz}
+create_box      2 box
+
+variable        current equal sum(q*vy)
+
+# Making atoms
+create_atoms    1 random ${NN} ${seed} legal_space
+create_atoms    2 random ${NN} ${seed2} legal_space
+
+# Grouping
+group           positive type 1
+group           negative type 2
+group           moving union positive negative
+
+
+# Charges
+set             group positive charge  ${charge}
+set             group negative charge -${charge}
+dielectric      ${dielectric}
+# set             group walls charge 0
+
+#Particle Masses
+mass            * ${mass}
+
+#Initial velocity
+velocity        moving create ${temp} ${seed} loop geom
+
+
+#Interaction Forces
+pair_style      lj/cut/coul/cut ${lj_cutoff}
+pair_coeff      * * ${diameter} ${epsilon}
+

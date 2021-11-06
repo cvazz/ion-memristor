@@ -1,0 +1,60 @@
+#################################################################
+######################### Output ################################
+#################################################################
+
+# Print to 
+
+
+
+
+# count atoms 
+
+variable        oxygen atom "type==1"
+variable        hydrogen atom "type==2"
+variable        pos atom "type==3"
+variable        neg atom "type==4"
+
+group           oxygen dynamic all var oxygen
+group           hydrogen dynamic all var hydrogen
+group           pos dynamic all var pos
+group           neg dynamic all var neg
+
+variable        nO equal count(oxygen)
+variable        nH equal count(hydrogen)
+variable        nP equal count(pos)
+variable        nN equal count(neg)
+
+
+# Grand Canonical Stats
+
+variable        tacc equal f_mygcmc[2]/(f_mygcmc[1]+0.1) # translation success rate
+variable        iacc equal f_mygcmc[4]/(f_mygcmc[3]+0.1) # insertion success rate
+variable        dacc equal f_mygcmc[6]/(f_mygcmc[5]+0.1) # deletion success rate
+variable        racc equal f_mygcmc[8]/(f_mygcmc[7]+0.1) # rotation success rate
+
+# Thermo to print
+variable        ptime equal time
+variable        ppress equal press
+variable        pdensity equal density
+variable        ptemp equal temp
+
+# variable        effect_vol equal (xhi-xlo)*(yhi-ylo)*(${width}-zlo)
+variable        effect_vol equal ${xlim}*${ylim}*(${width})
+variable        effect_dens equal mass(moving,sim_space)
+# variable        effect_dens equal mass(moving)/${effect_vol}
+variable        illegal_vol equal (xhi-xlo)*(yhi-ylo)*(zhi-${width})
+variable        illegal_dens equal mass(sim_space,moving)/${illegal_vol}
+
+
+
+fix             myprint all print ${print_every} &
+                "$(time),$(temp),$(density),$(press),${mu},${NN},${nO}" &
+                title "" append ${thermo_file} screen no 
+
+thermo          ${thermo_every}
+thermo_style    custom step time temp press pe ke density atoms v_nO v_nH v_nP v_nN v_iacc v_dacc  # v_tacc v_racc 
+# thermo_style    custom step time temp density v_effect_dens #v_illegal_dens atoms v_nO v_nP #v_iacc v_dacc  # v_tacc v_racc 
+
+# Dump
+dump            myDump all xyz ${dump_every} ${dump_file}
+dump_modify     myDump element O H Na Cl C

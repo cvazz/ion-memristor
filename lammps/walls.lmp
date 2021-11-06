@@ -1,0 +1,122 @@
+# Sim Attributes
+variable        print_every equal 100
+variable        temp equal 300
+variable        dtemp equal 100
+variable        timestep equal .1
+variable        seed equal 1234567
+
+#Ion attributes 
+variable        charge equal 1
+variable        mass equal 12
+variable        diameter equal 1
+
+#Interaction
+variable        epsilon equal 1
+variable        lj_cutoff equal 10
+variable        dielectric equal 40
+
+#wall interaction
+variable        wall_sigma equal 1
+variable        wall_epsilon equal 1
+variable        wall_cutoff equal 1
+
+#Electric field
+variable        E_max equal 10
+variable        freq  equal 10^(15)/10^(12)
+variable        efield equal ${E_max}*(2*(time%${freq})/${freq}-1)*(-1)
+
+
+#box attributes
+variable        plane equal 20
+variable        height equal 2
+variable        dz equal 0.3
+variable        spacing equal 1
+
+variable        edge_x equal ${plane}
+variable        edge_y equal ${plane}
+variable        edge_z equal ${height}
+variable        bz equal ${dz}
+variable        tz equal ${edge_z}+${dz}-${spacing}
+
+variable        seed2 equal ${seed}+10 
+
+###############################################################################
+################################ Setup Sim ####################################
+###############################################################################
+
+units           real
+atom_style      charge
+timestep        ${timestep}
+
+boundary        p p s
+region          box block 0 ${edge_x} 0 ${edge_y} 0 ${edge_z}
+region          legal_space block 0 ${edge_x} 0 ${edge_y} ${bz} ${tz}
+create_box      2 box
+
+variable        current equal sum(q*vy)
+
+# Making atoms
+create_atoms    1 random ${NN} ${seed} legal_space
+create_atoms    2 random ${NN} ${seed2} legal_space
+
+# Grouping
+group           positive type 1
+group           negative type 2
+group           moving union positive negative
+
+
+# Charges
+set             group positive charge  ${charge}
+set             group negative charge -${charge}
+dielectric      ${dielectric}
+# set             group walls charge 0
+
+#Particle Masses
+mass            * ${mass}
+
+#Initial velocity
+velocity        moving create ${temp} ${seed} loop geom
+
+
+#Interaction Forces
+pair_style      lj/cut/coul/cut ${lj_cutoff}
+pair_coeff      * * ${diameter} ${epsilon}
+
+# Neighbor Magic
+neighbor        2.0 nsq
+neigh_modify    delay 0
+
+###############################################################################
+################################## Fixes ######################################
+###############################################################################
+
+# Walls
+fix             wall_bot moving wall/lj126 zlo EDGE ${wall_sigma} ${wall_epsilon} ${wall_cutoff} 
+fix             wall_top moving wall/lj126 zhi EDGE ${wall_sigma} ${wall_epsilon} ${wall_cutoff} 
+
+# run             0
+minimize        1.0e-3 1.0e-5 1000 1000
+
+# Electric Field
+fix             e_field moving efield 0 v_efield 0 
+
+# Thermostat
+fix             1 moving nvt temp ${temp} ${temp} 100.0
+
+###############################################################################
+################################## Output #####################################
+###############################################################################
+
+thermo          ${print_every}
+variable        vxq atom vx*q 
+variable        vyq atom vy*q 
+variable        vzq atom vz*q 
+compute         curr_x all reduce sum v_vxq
+compute         curr_y all reduce sum v_vyq
+compute         curr_z all reduce sum v_vzq
+thermo_style    custom step temp v_efield c_curr_y   
+
+
+dump            myDump all xyz ${print_every} ${dump_loc}
+dump_modify     myDump element Na Cl
+

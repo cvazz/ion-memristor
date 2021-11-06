@@ -1,0 +1,37 @@
+#################################################################
+#################### Mutable Variables ##########################
+#################################################################
+
+# Changeable
+variable        disp index 0.5
+variable        temp index 300.0
+variable        dtemp index 100
+
+#box 
+variable        xlim equal 21.88
+variable        ylim equal 21.25
+variable        zlim equal 100
+variable        width equal 6.7 # z-axis
+variable        safety_z equal .3
+variable        spacing index 5
+
+# global model settings
+variable        runtime equal 50000
+variable        print_every equal 100
+variable        thermo_every equal 1000
+variable        dump_every equal 100
+variable        timestep equal 1
+variable        seed equal 12456
+
+# Fix vars
+variable        lj_cutoff equal 14 
+variable        mc_interval equal 100 
+variable        mc_exchange equal 400
+variable        mc_move equal 0 
+
+# Derived vars
+variable        mu equal -v_mua
+variable        seed2 equal ${seed}+12 
+
+variable        thermo_file index csv/${filename}_mu${mua}_NN${NN}.csv
+variable        dump_file index xyz/${filename}_mu${mua}_NN${NN}.xyz

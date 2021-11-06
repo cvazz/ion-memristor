@@ -1,0 +1,24 @@
+
+
+
+variable        filename index slit
+variable        mua equal 8
+variable        NN equal 5
+
+include         slit.vars.lmp
+
+
+include         slit.setup.lmp
+print           "time,temp,density,press,mu,ion_count,water_count" &
+                file ${thermo_file} screen no
+minimize        0.0 0.0 100 1000
+reset_timestep  0
+
+include         slit.fixes.lmp
+run             1000
+reset_timestep  0
+
+include         slit.gcmc.lmp
+include         slit.out.lmp
+
+run             20000

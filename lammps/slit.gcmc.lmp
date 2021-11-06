@@ -1,0 +1,8 @@
+###############################################################################
+############################## Grand Canonical ################################
+###############################################################################
+
+variable        tfac equal 5.0/3.0 # (3 trans + 2 rot)/(3 trans)
+fix             mygcmc moving gcmc ${mc_interval} ${mc_exchange} ${mc_move} 0 ${seed} & 
+                ${temp} ${mu} ${disp} mol h2omol tfac_insert ${tfac} &
+                shake wshake group h2o group moving region safe_space

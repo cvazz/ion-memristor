@@ -1,0 +1,22 @@
+################################################################################
+################# Fixes and other things necessary after restart ###############
+################################################################################
+
+# How many neighbors to keep around
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 1 check yes
+
+
+# Thermostat
+
+fix             mynvt moving nvt temp ${temp} ${temp} ${dtemp}
+
+fix             wshake h2o shake 0.0001 50 0 b 1 a 1 mol h2omol
+
+# important to make temperature dofs dynamic
+
+compute_modify  thermo_temp dynamic/dof yes
+compute_modify  mynvt_temp dynamic/dof yes
+
+# thermo_modify   lost warn

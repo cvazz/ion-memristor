@@ -1,0 +1,42 @@
+###############################################################################
+################################## Other ######################################
+###############################################################################
+
+# Neighbor Magic
+neighbor        2.0 nsq
+neigh_modify    delay 0
+
+###############################################################################
+################################## Fixes ######################################
+###############################################################################
+
+# Walls
+fix             wall_bot moving wall/lj126 zlo 0 ${wall_sigma} ${wall_epsilon} ${wall_cutoff} 
+fix             wall_top moving wall/lj126 zhi ${edge_z} ${wall_sigma} ${wall_epsilon} ${wall_cutoff} 
+
+# run             
+if !${restart} then &
+    "minimize        1.0e-3 1.0e-5 1000 1000" 
+
+# Electric Field
+fix             e_field moving efield 0 v_efield 0 
+
+# Thermostat
+fix             1 moving nvt temp ${temp} ${temp} 100.0
+
+###############################################################################
+################################## Output #####################################
+###############################################################################
+
+thermo          ${print_every}
+variable        vxq atom vx*q 
+variable        vyq atom vy*q 
+variable        vzq atom vz*q 
+compute         curr_x all reduce sum v_vxq
+compute         curr_y all reduce sum v_vyq
+compute         curr_z all reduce sum v_vzq
+thermo_style    custom step temp v_efield c_curr_y   
+
+
+dump            myDump all xyz ${print_every} ${dump_loc}
+dump_modify     myDump element Na Cl
