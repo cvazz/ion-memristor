@@ -9,10 +9,17 @@ neigh_modify    delay 0
 ###############################################################################
 ################################## Fixes ######################################
 ###############################################################################
+print "sysheight: ${height}, zhi: $(zhi), zlo: $(zlo)" 
+# run 1
+# compute lowest all reduce min z
+# compute highest all reduce max z
+# print "lowest particle: $(c_lowest)"
+
+write_dump       all xyz ../xyz/temp.xyz
 
 # Walls
-fix             wall_bot moving wall/lj126 zlo 0 ${wall_sigma} ${wall_epsilon} ${wall_cutoff} 
-fix             wall_top moving wall/lj126 zhi ${edge_z} ${wall_sigma} ${wall_epsilon} ${wall_cutoff} 
+fix             wall_bot moving wall/lj126 zlo 0 ${wall_epsilon} ${wall_sigma} ${wall_cutoff} 
+fix             wall_top moving wall/lj126 zhi ${height} ${wall_epsilon} ${wall_sigma} ${wall_cutoff} 
 
 # run             
 if !${restart} then &
@@ -35,7 +42,8 @@ variable        vzq atom vz*q
 compute         curr_x all reduce sum v_vxq
 compute         curr_y all reduce sum v_vyq
 compute         curr_z all reduce sum v_vzq
-thermo_style    custom step temp v_efield c_curr_y   
+variable        curr_y equal c_curr_y*100
+thermo_style    custom step temp v_efield v_efield_wrong_unit c_curr_y v_curr_y
 
 
 dump            myDump all xyz ${print_every} ${dump_loc}

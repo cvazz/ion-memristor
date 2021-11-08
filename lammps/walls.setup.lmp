@@ -1,3 +1,26 @@
+#################################################################
+################ Immutable Constant Variables ###################
+#################################################################
+
+#Charge
+variable        c equal 1
+variable        charge_pos equal  $c
+variable        charge_neg equal -$c
+
+#Mass 
+variable        mass_pos equal 22.9898
+variable        mass_neg equal 35.453
+variable        mass_graph equal 12.0107 
+
+#LJ Sigmas
+variable        diameter_pos equal 2.35
+variable        diameter_neg equal 4.401
+variable        diameter_graph equal 3.214
+
+#LJ Epsilon
+variable        well_depth_pos equal .123
+variable        well_depth_neg equal .1
+variable        well_depth_graph equal .0566
 ###############################################################################
 ################################ Setup Sim ####################################
 ###############################################################################
@@ -30,7 +53,8 @@ dielectric      ${dielectric}
 # set             group walls charge 0
 
 #Particle Masses
-mass            * ${mass}
+mass            1 ${mass_pos}
+mass            2 ${mass_neg}
 
 #Initial velocity
 velocity        moving create ${temp} ${seed} loop geom
@@ -38,5 +62,7 @@ velocity        moving create ${temp} ${seed} loop geom
 
 #Interaction Forces
 pair_style      lj/cut/coul/cut ${lj_cutoff}
-pair_coeff      * * ${diameter} ${epsilon}
+pair_modify     mix arithmetic 
+pair_coeff      1 1 ${well_depth_pos} ${diameter_pos}
+pair_coeff      2 2 ${well_depth_neg} ${diameter_neg}
 

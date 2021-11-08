@@ -33,5 +33,6 @@ variable        mc_move equal 0
 variable        mu equal -v_mua
 variable        seed2 equal ${seed}+12 
 
-variable        thermo_file index csv/${filename}_mu${mua}_NN${NN}.csv
-variable        dump_file index xyz/${filename}_mu${mua}_NN${NN}.xyz
+# File locations
+variable        thermo_file index ../csv/${filename}_mu${mua}_NN${NN}.csv
+variable        dump_file index ../xyz/${filename}_mu${mua}_NN${NN}.xyz

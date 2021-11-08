@@ -7,33 +7,22 @@
 # it is a lot easier to compute allows for more rapid experimentation.
 
 
-variable        dump_loc index "xyz/walls.xyz"
-variable        restart_loc index "restart/restart.walls"
+variable        dump_loc index "../xyz/walls.xyz"
+variable        restart_loc index "../restart/restart.walls"
 variable        NN equal 30
-variable        runtime equal 10000
+variable        runtime equal 100000
 variable        restart index 0
-variable        old_version index 0
-include         walls_vars.lmp
+include         walls.vars.lmp
 
-if "!${restart} && !${old_version}" then &
-    "include         walls_setup.lmp           " &
-    "include         walls_fixes.lmp           " &
+if !${restart} then &
+    "include         walls.setup.lmp           " &
+    "include         walls.fixes.lmp           " &
     "run             ${runtime}                " &
     "write_restart   ${restart_loc}            " &
-elif "!${old_version}" &
+else &
     "read_restart    ${restart_loc}            " &
-    "include         walls_fixes.lmp           " &
+    "include         walls.fixes.lmp           " &
     "run             ${runtime}                " 
 
 
 
-
-# old version
-if "!${restart} && ${old_version}" then &
-    "include         walls.lmp                 " &
-    "run             ${runtime}                " &
-    "write_restart   ${restart_loc}            " &
-elif "${old_version}" &
-    "read_restart    ${restart_loc}            " &
-    "include         walls_restart.lmp         " &
-    "run             ${runtime}                " 

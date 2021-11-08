@@ -7,18 +7,25 @@ variable        NN equal 5
 
 include         slit.vars.lmp
 
-
+# setting up system
 include         slit.setup.lmp
-print           "time,temp,density,press,mu,ion_count,water_count" &
-                file ${thermo_file} screen no
+
+# add minimization before adding thermostat
+# Still necessary
 minimize        0.0 0.0 100 1000
 reset_timestep  0
 
+# Add Thermostat & Grand Canonical Bath
 include         slit.fixes.lmp
 run             1000
 reset_timestep  0
-
 include         slit.gcmc.lmp
-include         slit.out.lmp
 
+
+# Add all prints and such
+print           "time,temp,density,press,mu,ion_count,water_count" &
+                file ${thermo_file} screen no
+include         slit.output.lmp
+
+# Run it
 run             20000
