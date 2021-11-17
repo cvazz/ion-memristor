@@ -1,0 +1,38 @@
+
+# global specify
+variable        filename index slit_loop
+variable        thermo_file index ../csv/${filename}3.csv
+variable        runtime index 100000
+variable        restart index 0
+variable        E_max index 0 
+variable        do_gcmc index 1
+variable        do_dump index 1
+
+print           "time,temp,density,mu,ion_count,water_count" &
+                file ${thermo_file} screen no
+
+variable        volt2special equal 0.0000861733326 # Volt/Angstrom -> (kB T)/(e A)
+variable        E_max index 0
+variable        efield equal 0
+variable        NN index 5
+variable        mu_idx loop 9
+
+label           top
+    # Loop NN
+        #Loop mu_index
+        variable        mua equal 7+${mu_idx}
+        include         slit.vars.lmp      # define dependent/constant variables
+        include         slit.setup.lmp     # define properties of atoms and box
+        include         slit.fixes.lmp     # Thermostat
+        include         slit.gcmc.lmp      # Grand Canonical
+        include         slit.output.lmp    # Prints
+
+        run             ${runtime}
+        write_restart   file ../restart/restart.slit.gcmc-mu${mua}-NN${NN}
+        
+        clear 
+        next        mu_idx
+    jump        SELF top
+
+    next            NN 
+jump            SELF top

@@ -1,0 +1,31 @@
+variable        filename index slit
+variable        mua index 8
+variable        NN index 5
+variable        restart index 0
+variable        E_max index 0 
+variable        do_gcmc index 1
+variable        do_dump index 1
+variable        runtime index 20000
+
+include         slit.vars.lmp
+
+# setting up system
+include         slit.setup.lmp
+
+# add minimization before adding thermostat
+# Still necessary
+if FALSE then &
+   " minimize        0.0 0.0 100 1000 " &
+   " reset_timestep  0                " 
+
+# Add Thermostat & Grand Canonical Bath
+include         slit.fixes.lmp
+if              ${do_gcmc} then "include slit.gcmc.lmp"
+
+# Add all prints and such
+print           "time,temp,density,press,mu,ion_count,water_count" &
+                file ${thermo_file} screen no
+include         slit.output.lmp
+
+# Run it
+run             ${runtime}

@@ -6,29 +6,21 @@
 # However, ot containing water molecules or walls made out of individual atoms
 # it is a lot easier to compute allows for more rapid experimentation.
 
-variable        thermo_file index ../csv/walls.csv
 
-print           "time,temp,density,ion_count,efield,current_x,current_y" &
-                file ${thermo_file} screen no
-label           top
 variable        NN index 30
-variable        runtime index 100000
+variable        runtime index 1000000
 variable        restart index 0
-variable        E_max index 0 0.1 0.5 1 2 5 10 50
-variable        E_max index 0.1 
+variable        E_max index 0.5
 include         walls.vars.lmp
 variable        efield equal ${E_max}*${volt2special}*${temp}
-variable        restart_loc index "restart.walls${E_max}"
-variable        dump_every index 100
-variable        dump_file index "walls.xyz"
 
-print           ${thermo_file}
+variable        thermo_loc index walls${E_max}.csv
+variable        restart_loc index "restart.walls"
+print           ${thermo_loc}
 print           ${restart_loc}
 if !${restart} then &
     "include         walls.setup.lmp           " &
     "include         walls.fixes.lmp           " &
-    "dump            myDump all xyz ${dump_every} ${dump_file}" &
-    "dump_modify     myDump element Na Cl" &
     "run             ${runtime}                " &
     "write_restart   ${restart_loc}            " &
 else &
@@ -37,6 +29,4 @@ else &
     "run             ${runtime}                " 
 
 
-clear
-next        E_max
-jump        SELF top
+

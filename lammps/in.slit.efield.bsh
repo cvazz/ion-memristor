@@ -1,0 +1,25 @@
+# change from outside
+variable        filename index efield
+variable        NN index 5
+variable        restart index 0
+variable        do_gcmc index 1
+variable        do_dump index 0
+variable        runtime index 20000
+variable        E_max index 0.5
+print           ${E_max}
+
+include         slit.vars.lmp
+
+
+#Electric field
+variable        volt2special equal 0.0000861733326 # Volt/Angstrom -> (kB T)/(e A)
+variable        efield equal ${E_max}*${volt2special}*${temp}
+
+
+# setting up system
+include         slit.setup.lmp
+include         slit.fixes.lmp
+include         efield.output.lmp
+
+# Run it
+run             ${runtime}

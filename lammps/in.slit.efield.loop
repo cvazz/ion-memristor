@@ -1,0 +1,34 @@
+
+
+
+
+# global specify
+variable        filename index slit_loop_efield_w80
+variable        thermo_file index ../csv/${filename}.csv
+variable        runtime equal 50000
+variable        do_dump index 1
+
+print           "time,temp,density,ion_count,efield,current_x,current_y" &
+                file ${thermo_file} screen no
+
+label           top
+variable        volt2special equal 0.0000861733326 # Volt/Angstrom -> (kB T)/(e A)
+variable        E_max index 0 5 10 50
+
+variable        NN index 5
+variable        N_water index 80
+variable        mua equal 11
+
+    include         slit.vars.lmp
+    variable        efield equal ${E_max}*${volt2special}*${temp}
+    include         slit.setup.lmp # config of system
+    include         slit.fixes.lmp # Add Thermostat
+    include         efield.output.lmp #prints
+
+    run             ${runtime}
+    
+    clear 
+    next        E_max
+    jump        SELF top
+next            NN 
+jump            SELF top

@@ -13,7 +13,7 @@ variable        ylim equal 21.25
 variable        zlim equal 100
 variable        width equal 6.7 # z-axis
 variable        safety_z equal .3
-variable        spacing index 3.9
+variable        spacing index 5
 
 # global model settings
 variable        runtime index 50000

@@ -4,11 +4,13 @@
 variable        filename index slit
 variable        mua equal 8
 variable        NN equal 5
+variable        E_max index 0
 
 include         slit.vars.lmp
+variable        boxlength equal 10
 
 # setting up system
-include         slit.setup.lmp
+include         bulk.setup.lmp #length defined boxlength
 
 # add minimization before adding thermostat
 # Still necessary
@@ -26,6 +28,9 @@ include         slit.gcmc.lmp
 print           "time,temp,density,press,mu,ion_count,water_count" &
                 file ${thermo_file} screen no
 include         slit.output.lmp
+# Dump
+dump            myDump all xyz ${dump_every} ${dump_file}
+dump_modify     myDump element O H Na Cl
 
 # Run it
 run             20000

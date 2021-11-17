@@ -48,6 +48,7 @@ variable        EE equal ${E_max}
 thermo_style    custom step temp v_EE v_curr_y
 
 fix             myprint all print ${print_every} &
-                "$(time),$(temp),$(density),${NN},${E_max},${curr_x},${curr_y}" &
-                title "" append ${thermo_file} screen no 
+                "$(time),$(temp),$(density),${NN},${E_max},v_curr_x,v_curr_y" &
+                title "time,temp,density,ion_count,efield,current_x,current_y" &
+                 append ${thermo_loc} screen no 
 

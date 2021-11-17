@@ -1,0 +1,68 @@
+#################################################################
+################ Immutable Constant Variables ###################
+#################################################################
+
+#Charge
+variable        c equal 1
+variable        charge_pos equal  $c
+variable        charge_neg equal -$c
+
+#Mass 
+variable        mass_pos equal 22.9898
+variable        mass_neg equal 35.453
+variable        mass_graph equal 12.0107 
+
+#LJ Sigmas
+variable        diameter_pos equal 2.35
+variable        diameter_neg equal 4.401
+variable        diameter_graph equal 3.214
+
+#LJ Epsilon
+variable        well_depth_pos equal .123
+variable        well_depth_neg equal .1
+variable        well_depth_graph equal .0566
+###############################################################################
+################################ Setup Sim ####################################
+###############################################################################
+
+units           real
+atom_style      charge
+timestep        ${timestep}
+
+boundary        p p s
+region          box block 0 ${edge_x} 0 ${edge_y} 0 ${edge_z}
+region          legal_space block 0 ${edge_x} 0 ${edge_y} ${bz} ${tz}
+create_box      2 box
+
+variable        current equal sum(q*vy)
+
+# Making atoms
+create_atoms    1 random ${NN} ${seed} legal_space
+create_atoms    2 random ${NN} ${seed2} legal_space
+
+# Grouping
+group           positive type 1
+group           negative type 2
+group           moving union positive negative
+
+
+# Charges
+set             group positive charge  ${charge}
+set             group negative charge -${charge}
+dielectric      ${dielectric}
+# set             group walls charge 0
+
+#Particle Masses
+mass            1 ${mass_pos}
+mass            2 ${mass_neg}
+
+#Initial velocity
+velocity        moving create ${temp} ${seed} loop geom
+
+
+#Interaction Forces
+pair_style      lj/cut/coul/cut ${lj_cutoff}
+pair_modify     mix arithmetic 
+pair_coeff      1 1 ${well_depth_pos} ${diameter_pos}
+pair_coeff      2 2 ${well_depth_neg} ${diameter_neg}
+

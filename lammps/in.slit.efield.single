@@ -1,0 +1,32 @@
+# change from outside
+variable        filename index efield
+variable        NN index 5
+variable        restart index 0
+variable        do_gcmc index 1
+variable        do_dump index 1
+variable        E_max index 0.5
+variable        runtime index 20000
+
+include         slit.vars.lmp
+
+
+#Electric field
+variable        volt2special equal 0.0000861733326 # Volt/Angstrom -> (kB T)/(e A)
+variable        efield equal ${E_max}*${volt2special}*${temp}
+
+
+print           "time,temp,density,ion_count,efield,current_x,current_y" &
+                file ${thermo_file} screen no
+
+# setting up system
+include         slit.setup.lmp
+include         slit.fixes.lmp
+include         efield.output.lmp
+
+# Run it
+run             ${runtime}
+
+
+WhySoSerious??
+scp export-efield.zip 7036795@gemini.science.uu.nl:/nethome/7036795/
+scp export-efield.zip 7036795@thor.science.uu.nl:/nethome/7036795/

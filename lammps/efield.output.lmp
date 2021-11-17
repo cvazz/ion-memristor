@@ -2,10 +2,6 @@
 ######################### Output ################################
 #################################################################
 
-# Print to 
-
-
-
 
 # count atoms 
 
@@ -24,14 +20,6 @@ variable        nH equal count(hydrogen)
 variable        nP equal count(pos)
 variable        nN equal count(neg)
 
-
-# Grand Canonical Stats
-
-variable        tacc equal f_mygcmc[2]/(f_mygcmc[1]+0.1) # translation success rate
-variable        iacc equal f_mygcmc[4]/(f_mygcmc[3]+0.1) # insertion success rate
-variable        dacc equal f_mygcmc[6]/(f_mygcmc[5]+0.1) # deletion success rate
-variable        racc equal f_mygcmc[8]/(f_mygcmc[7]+0.1) # rotation success rate
-
 # Thermo to print
 variable        ptime equal time
 variable        ppress equal press
@@ -46,16 +34,24 @@ variable        illegal_vol equal (xhi-xlo)*(yhi-ylo)*(zhi-${width})
 variable        illegal_dens equal mass(sim_space,moving)/${illegal_vol}
 
 
+variable        vxq atom vx*q 
+variable        vyq atom vy*q 
+variable        vzq atom vz*q 
+compute         curr_x all reduce sum v_vxq
+compute         curr_y all reduce sum v_vyq
+compute         curr_z all reduce sum v_vzq
+variable        curr_y equal c_curr_y/(yhi-ylo)
+variable        curr_x equal c_curr_x/(xhi-xlo)
+variable        EE equal ${E_max}
+thermo_style    custom step temp v_EE v_curr_y
+thermo          ${thermo_every}
 
 fix             myprint all print ${print_every} &
-                "$(time),$(temp),$(density),$(press),${mu},${NN},${nO}" &
+                "$(time),$(temp),$(density),${NN},${E_max},${curr_x},${curr_y}" &
                 title "" append ${thermo_file} screen no 
 
-thermo          ${thermo_every}
-# thermo_style    custom step time temp press pe ke density atoms v_nO v_nH v_nP v_nN v_iacc v_dacc  # v_tacc v_racc 
-thermo_style    custom step time temp density atoms v_nO v_nP # v_tacc v_racc 
-# thermo_style    custom step time temp density v_effect_dens #v_illegal_dens atoms v_nO v_nP #v_iacc v_dacc  # v_tacc v_racc 
 
+# Dump
 if ${do_dump} then &
-    " dump            myDump all xyz ${dump_every} ${dump_file} " &
+    " dump            myDump all xyz ${dump_every} ${dump_file_efield} " &
     " dump_modify     myDump element O H Na Cl C                "
