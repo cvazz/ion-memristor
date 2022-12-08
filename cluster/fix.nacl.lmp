@@ -1,0 +1,315 @@
+# variable sup_folder index /nethome/7036795/experiments/supple
+
+variable        sidelength index 4
+variable        ypos index 7.5
+variable        water_density index 23.2
+
+variable        E_max index 0
+variable        charge index 1
+variable        sidelength index 4
+variable        width index 10 # z-axis
+
+variable        spacing index 3.1
+variable        temp index 298
+variable        slA equal 10*${sidelength}
+
+
+variable        sup_folder index ../supple
+variable        timestep equal 1
+
+# Fix vars
+variable        lj_cutoff equal 14 
+
+#box 
+# variable        width equal 6.7 # z-axis
+variable        safety_z equal 3
+variable        very_safety_z equal 3
+
+
+variable        typeB index 3
+variable        typeM index 4
+variable        xpos index 0
+variable        ypos index $(v_slA/4) 
+
+
+variable        filename index pair_interact_c${charge}_e${E_max}_y${ypos}
+variable        log_name index log.${filename}
+variable        print_name index ${filename}.csv
+variable        dump_name index ${filename}.xyz
+variable        dump_pre index pre-${filename}.xyz
+log             log.${filename}
+
+
+
+variable        runtime index 1000000
+variable        print_every index 20
+variable        thermo_every index 100
+variable        dump_every index 1000
+
+
+variable        dtemp index 100
+
+#################################################################
+################ Immutable Constant Variables ###################
+#################################################################
+
+#Charge
+variable        seed equal 12456
+variable        seed2 equal ${seed}+12 
+
+variable        charge_pos equal  ${charge}
+variable        charge_neg equal -${charge}
+
+#Mass 
+variable        mass_pos equal 22.9898
+variable        mass_neg equal 35.453
+
+#LJ Sigmas
+variable        diameter_pos equal 2.35
+variable        diameter_neg equal 4.401
+variable        diameter_graph equal 3.214
+
+#LJ Epsilon
+variable        well_depth_pos equal .123
+variable        well_depth_neg equal .1
+variable        well_depth_graph equal .0566
+
+
+
+#################################################################
+###################### General Setup ############################
+#################################################################
+
+#Water attributes
+
+
+units           real
+atom_style      full
+boundary        p p f
+pair_style      lj/cut/coul/long  ${lj_cutoff}
+pair_modify     mix arithmetic tail yes
+kspace_style    ewald 0.0001
+kspace_modify   slab 3.0
+bond_style      harmonic
+angle_style     harmonic
+
+#################################################################
+############################ The Box ############################
+#################################################################
+
+# box, start molecules on simple cubic lattice
+
+lattice         sc ${spacing}
+# region          box block 0 ${slA} 0 $(2*v_slA) 0 ${slA} units box
+region          box block 0 ${slA} 0 ${slA} 0 ${width} units box
+
+create_box      4 box                       &
+                bond/types 1                &
+                angle/types 1               &
+                extra/bond/per/atom 2       &
+                extra/angle/per/atom 1      &
+                extra/special/per/atom 2
+# 
+
+#################################################################
+####################### Assign Constants ########################
+#################################################################
+
+# pair coefficients
+
+pair_coeff      1 1 0.15535 3.166
+pair_coeff      2 2 0.0 0.0
+pair_coeff      3 3 ${well_depth_pos} ${diameter_pos}
+pair_coeff      4 4 ${well_depth_neg} ${diameter_neg}
+
+# other coeffs
+
+bond_coeff      1     1000       1.0
+angle_coeff     1      100       109.47
+
+# masses
+
+
+
+mass            1 15.9994 
+mass            2 1.0
+mass            3 ${mass_pos}
+mass            4 ${mass_neg}
+
+#################################################################
+######################### Create Atoms ##########################
+#################################################################
+# graphene
+
+# create_atoms    ${typeB} single $(v_slA/4) $(v_slA/4) $(v_width/2) units box
+# create_atoms    ${typeM} single ${xpos} ${ypos} $(v_width/2)units box
+create_atoms    ${typeB} single 0 0 $(v_width/2) units box
+create_atoms    ${typeM} single ${xpos} ${ypos} $(v_width/2) units box
+group           bas id 1 
+group           mov id 2 
+
+# change_box      all y final 0 ${slA} z final 0 ${width} units box
+
+variable        zlow_safe equal ${safety_z}
+variable        zhigh_safe equal ${width}-${safety_z}
+variable        mindist equal 5
+
+
+region          mov_reg block                   &
+$(v_xpos-v_mindist) $(v_xpos+v_mindist)         &
+$(v_ypos-v_mindist) $(v_ypos+v_mindist)         &
+$(v_width/2-v_mindist) $(v_width/2+v_mindist)   &
+                             units box side out
+
+region          safe_space block $(xlo) $(xhi) $(ylo) $(yhi) ${zlow_safe} ${zhigh_safe} units box
+
+variable        N_water equal ceil(v_water_density*(xhi-xlo)*(yhi-ylo)/100)
+
+# water
+molecule        h2omol ${sup_folder}/H2O.txt
+create_atoms    0 random ${N_water} 12345 safe_space mol h2omol 1123
+
+
+
+#################################################################
+######################### Group Atoms ##########################
+#################################################################
+
+group           h2o type 1 2
+group           positive type 3
+group           negative type 4
+group           ions union positive negative
+group           moving union ions h2o
+
+
+
+#################################################################
+######################### More Settings #########################
+#################################################################
+
+
+# Add charge
+set             type 3 charge ${charge_pos}
+set             type 4 charge ${charge_neg}
+
+# MD settings
+
+velocity        h2o create ${temp} ${seed2}
+
+fix             freezeB bas setforce 0 0 0 
+fix             freezeM mov setforce 0 0 0 
+
+
+################################################################################
+############################# Variables and Startup ############################
+################################################################################
+
+
+
+
+
+print """
+x: $(xlo) - $(xhi)
+y: $(ylo) - $(yhi)
+z: $(zlo) - $(zhi)
+
+xpos: ${xpos}
+ypos: ${ypos}
+"""
+
+
+# How many neighbors to keep around
+
+
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 1 check yes 
+
+
+# walls
+variable        wall_sigma equal 3.214
+variable        wall_epsilon equal .0566
+variable        wall_cutoff equal 2^(1/6)*${wall_sigma}
+fix             wall_bot moving wall/lj93 zlo EDGE ${wall_epsilon} ${wall_sigma} ${wall_cutoff} 
+fix             wall_top moving wall/lj93 zhi EDGE ${wall_epsilon} ${wall_sigma} ${wall_cutoff} 
+
+fix relaxfix h2o nve/limit 0.1
+timestep 10
+run 100
+unfix relaxfix
+# Thermostat
+
+fix             tstat moving nvt temp ${temp} ${temp} ${dtemp}
+
+fix             wshake h2o shake 0.0001 50 0 b 1 a 1 mol h2omol
+
+# important to make temperature dofs dynamic
+
+
+thermo 100
+timestep 0.0001
+run 1000
+unfix  tstat
+unfix  wshake
+fix relaxfix h2o nve/limit 0.1
+timestep 10
+run 100
+unfix relaxfix
+fix             tstat moving nvt temp ${temp} ${temp} ${dtemp}
+fix             wshake h2o shake 0.0001 50 0 b 1 a 1 mol h2omol
+timestep 0.001
+run 1000
+unfix  tstat
+unfix  wshake
+fix relaxfix h2o nve/limit 0.1
+timestep 10
+run 100
+unfix relaxfix
+fix             tstat moving nvt temp ${temp} ${temp} ${dtemp}
+fix             wshake h2o shake 0.0001 50 0 b 1 a 1 mol h2omol
+timestep 0.01
+run 2000
+
+unfix  tstat
+unfix  wshake
+fix relaxfix h2o nve/limit 0.1
+timestep 10
+run 100
+unfix relaxfix
+fix             tstat moving nvt temp ${temp} ${temp} ${dtemp}
+fix             wshake h2o shake 0.0001 50 0 b 1 a 1 mol h2omol
+
+
+timestep 0.1
+run 2000
+timestep 1
+run 1000
+
+reset_timestep  0
+timestep        1
+
+### Current Calculation ###
+
+fix             freezeB bas setforce 0 0 0 
+fix             freezeM mov setforce 0 0 0 
+
+# thermo_style    custom step temp pe ke v_  
+thermo_style    custom step  temp pe ke  &
+                f_freezeB[1] f_freezeB[2] f_freezeB[3] &
+                f_freezeM[1] f_freezeM[2] f_freezeM[3] 
+
+
+thermo          ${thermo_every}
+
+fix             myprint all print ${print_every} &
+                "$(time),$(temp),$(pe),$(ke),${ypos},$(f_freezeB[1]),$(f_freezeB[2]),$(f_freezeB[3]),$(f_freezeM[1]),$(f_freezeM[2]),$(f_freezeM[3])" &
+                title "time,temp,pot_eng,kin_eng,distance,freezeBx,freezeBy,freezeBz,freezeMx,freezeMy,freezeMz" &
+                file ${print_name} screen no 
+
+variable        n_ion equal count(positive)
+
+dump            myDump moving xyz ${dump_every} ${dump_name} 
+dump_modify     myDump element O H Na Cl                     
+
+write_dump      moving xyz ${dump_pre} 
+run             ${runtime}
